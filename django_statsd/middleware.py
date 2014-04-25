@@ -52,6 +52,16 @@ class GraphiteRequestTimingMiddleware(object):
             statsd.timing('view.{module}.{method}'.format(**data), ms)
             statsd.timing('view.{method}'.format(**data), ms)
 
+            # Track requests above certain threshholds
+            for threshhold in range(5, 16, 5):
+                if ms > threshhold * 1000:
+                    statsd.incr('view.{module}.{name}.{method}.over_{time}'
+                                .format(time=threshhold, **data))
+                else:
+                    # Won't be larger than already larger numbers
+                    break
+
+
 
 class TastyPieRequestTimingMiddleware(GraphiteRequestTimingMiddleware):
     """statd's timing specific to Tastypie."""
