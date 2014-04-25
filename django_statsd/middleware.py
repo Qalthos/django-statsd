@@ -1,5 +1,5 @@
 from django.http import Http404
-from django_statsd.clients import statsd
+from django_statsd.clients import get_client
 import inspect
 import time
 
@@ -7,6 +7,7 @@ import time
 class GraphiteMiddleware(object):
 
     def process_response(self, request, response):
+        statsd = get_client()
         statsd.incr('response.%s' % response.status_code)
         if hasattr(request, 'user') and request.user.is_authenticated():
             statsd.incr('response.auth.%s' % response.status_code)
@@ -14,6 +15,7 @@ class GraphiteMiddleware(object):
 
     def process_exception(self, request, exception):
         if not isinstance(exception, Http404):
+            statsd = get_client()
             statsd.incr('response.500')
             if hasattr(request, 'user') and request.user.is_authenticated():
                 statsd.incr('response.auth.500')
@@ -42,6 +44,7 @@ class GraphiteRequestTimingMiddleware(object):
 
     def _record_time(self, request):
         if hasattr(request, '_start_time'):
+            statsd = get_client()
             ms = int((time.time() - request._start_time) * 1000)
             data = dict(module=request._view_module, name=request._view_name,
                         method=request.method)
