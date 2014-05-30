@@ -8,17 +8,17 @@ class GraphiteMiddleware(object):
 
     def process_response(self, request, response):
         statsd = get_client()
-        statsd.incr('response.%s' % response.status_code)
+        statsd.incr('response.%s' % response.status_code, count=6)
         if hasattr(request, 'user') and request.user.is_authenticated():
-            statsd.incr('response.auth.%s' % response.status_code)
+            statsd.incr('response.auth.%s' % response.status_code, count=6)
         return response
 
     def process_exception(self, request, exception):
         if not isinstance(exception, Http404):
             statsd = get_client()
-            statsd.incr('response.500')
+            statsd.incr('response.500', count=6)
             if hasattr(request, 'user') and request.user.is_authenticated():
-                statsd.incr('response.auth.500')
+                statsd.incr('response.auth.500', count=6)
 
 
 class GraphiteRequestTimingMiddleware(object):
@@ -56,11 +56,10 @@ class GraphiteRequestTimingMiddleware(object):
             for threshhold in range(5, 16, 5):
                 if ms > threshhold * 1000:
                     statsd.incr('view.{module}.{name}.{method}.over_{time}'
-                                .format(time=threshhold, **data))
+                                .format(time=threshhold, **data), count=6)
                 else:
                     # Won't be larger than already larger numbers
                     break
-
 
 
 class TastyPieRequestTimingMiddleware(GraphiteRequestTimingMiddleware):
