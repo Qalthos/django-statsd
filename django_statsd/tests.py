@@ -30,6 +30,7 @@ from django.utils import dictconfig
 from django.utils import unittest
 
 import mock
+import statsd
 from nose.tools import eq_
 from django_statsd.clients import get_client
 from django_statsd import middleware
@@ -50,7 +51,7 @@ cfg = {
 }
 
 
-@mock.patch.object(middleware.statsd, 'incr')
+@mock.patch.object(statsd.client.StatsClient, 'incr')
 class TestIncr(TestCase):
 
     def setUp(self):
@@ -82,7 +83,7 @@ class TestIncr(TestCase):
         eq_(incr.call_count, 2)
 
 
-@mock.patch.object(middleware.statsd, 'timing')
+@mock.patch.object(statsd.client.StatsClient, 'timing')
 class TestTiming(unittest.TestCase):
 
     def setUp(self):
@@ -387,7 +388,7 @@ class TestRecord(TestCase):
         assert self.client.post(self.url, data).status_code == 400
 
 
-@mock.patch.object(middleware.statsd, 'incr')
+@mock.patch.object(statsd.client.StatsClient, 'incr')
 class TestErrorLog(TestCase):
 
     def setUp(self):

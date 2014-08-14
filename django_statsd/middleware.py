@@ -7,18 +7,20 @@ import time
 class GraphiteMiddleware(object):
 
     def process_response(self, request, response):
-        statsd = get_client()
+        statsd = get_client().pipeline()
         statsd.incr('response.%s' % response.status_code, count=6)
         if hasattr(request, 'user') and request.user.is_authenticated():
             statsd.incr('response.auth.%s' % response.status_code, count=6)
+        statsd.send()
         return response
 
     def process_exception(self, request, exception):
         if not isinstance(exception, Http404):
-            statsd = get_client()
+            statsd = get_client().pipeline()
             statsd.incr('response.500', count=6)
             if hasattr(request, 'user') and request.user.is_authenticated():
                 statsd.incr('response.auth.500', count=6)
+            statsd.send()
 
 
 class GraphiteRequestTimingMiddleware(object):
@@ -44,7 +46,7 @@ class GraphiteRequestTimingMiddleware(object):
 
     def _record_time(self, request):
         if hasattr(request, '_start_time'):
-            statsd = get_client()
+            statsd = get_client().pipeline()
             ms = int((time.time() - request._start_time) * 1000)
             data = dict(module=request._view_module, name=request._view_name,
                         method=request.method)
@@ -60,6 +62,7 @@ class GraphiteRequestTimingMiddleware(object):
                 else:
                     # Won't be larger than already larger numbers
                     break
+            statsd.send()
 
 
 class TastyPieRequestTimingMiddleware(GraphiteRequestTimingMiddleware):
